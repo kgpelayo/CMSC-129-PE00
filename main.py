@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
+import re
 
 # Math Functions
 
@@ -64,14 +65,21 @@ def infix_to_postfix(expression):
 
     return output
 
+# Function to check if a variable name is valid according to C language naming conventions
+def is_valid_variable_name(name):
+    # C language: starts with a letter, followed by letters or digits, no underscores or reserved keywords
+    if re.match("^[a-zA-Z][a-zA-Z0-9]*$", name):
+        return True
+    return False
+
 # Function to handle the input
 def process_code(code, variables, errors, used_vars):
     try:
         if '=' in code:  # Assignment statement
             var, expr = code.split('=')
             var = var.strip()
-            if not var.isalpha() or len(var) == 0:
-                raise SyntaxError("Invalid variable name.")
+            if not is_valid_variable_name(var):
+                raise SyntaxError(f"Invalid variable name: {var}")
 
             postfix_expr = infix_to_postfix(expr.strip())
             value = evaluate_postfix(postfix_expr, variables)
@@ -128,16 +136,14 @@ def on_process():
     else:
         output_area.insert(tk.END, "No errors detected\n")
 
-def upload_file():
-    file_path = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
+# Function to load a .in file and insert its contents into the input area
+def load_file():
+    file_path = filedialog.askopenfilename(filetypes=[("Input files", "*.in")])
     if file_path:
-        try:
-            with open(file_path, "r") as file:
-                content = file.read()
-                input_area.delete("1.0", tk.END)
-                input_area.insert(tk.END, content)
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to read file: {str(e)}")
+        with open(file_path, "r") as file:
+            content = file.read()
+            input_area.delete("1.0", tk.END)
+            input_area.insert(tk.END, content)
 
 # Create the main window
 root = tk.Tk()
@@ -149,9 +155,9 @@ input_label.pack()
 input_area = tk.Text(root, height=10, width=50)
 input_area.pack()
 
-# Upload button
-upload_button = tk.Button(root, text="Upload .txt File", command=upload_file)
-upload_button.pack()
+# Load file button
+load_button = tk.Button(root, text="Load .in File", command=load_file)
+load_button.pack()
 
 # Process button
 process_button = tk.Button(root, text="Process", command=on_process)
