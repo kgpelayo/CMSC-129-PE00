@@ -1,7 +1,10 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import filedialog, messagebox
+import re
 
-# Helper function: precedence of operators
+# Math Functions
+
+# Defines the precedence and order of operations
 def precedence(op):
     if op == '+' or op == '-':
         return 1
@@ -9,42 +12,42 @@ def precedence(op):
         return 2
     return 0
 
-# Helper function: apply an operator to two operands
+# Applies the operation to the operands
 def apply_op(a, b, op):
     if op == '+': return a + b
     if op == '-': return a - b
     if op == '*': return a * b
     if op == '/':
         if b == 0:
-            raise ZeroDivisionError
+            raise ZeroDivisionError  # Flag zero division errors
         return a / b
     if op == '%':
         if b == 0:
             raise ZeroDivisionError
         return a % b
 
-# Function to evaluate a postfix expression
+# Evaluates the postfix expression
 def evaluate_postfix(exp, variables):
     stack = []
     for token in exp:
-        if token.isdigit():  # token is a number
+        if token.isdigit():  # Given that /token/ is a number
             stack.append(int(token))
-        elif token in variables:  # token is a variable
+        elif token in variables:  # Given that /token/ is a variable
             stack.append(variables[token])
-        else:  # token is an operator
+        else:  # Given that /token/ is an operator
             b = stack.pop()
             a = stack.pop()
             stack.append(apply_op(a, b, token))
     return stack.pop()
 
-# Function to convert infix to postfix using the Shunting Yard algorithm
+# Reformats the infix expression into postfix for ease of computing
 def infix_to_postfix(expression):
     output = []
     ops_stack = []
     tokens = expression.split()
-    
+
     for token in tokens:
-        if token.isalnum():  # token is a variable or a number
+        if token.isalnum():  # Given /token/ is a variable or number
             output.append(token)
         elif token == '(':
             ops_stack.append(token)
@@ -52,51 +55,95 @@ def infix_to_postfix(expression):
             while ops_stack and ops_stack[-1] != '(':
                 output.append(ops_stack.pop())
             ops_stack.pop()
-        else:  # token is an operator
+        else:  # Given /token/ is an operator
             while (ops_stack and precedence(ops_stack[-1]) >= precedence(token)):
                 output.append(ops_stack.pop())
             ops_stack.append(token)
-    
+
     while ops_stack:
         output.append(ops_stack.pop())
-    
+
     return output
 
-# Function to process the code
-def process_code(code, variables):
+# Function to check if a variable name is valid according to C language naming conventions
+def is_valid_variable_name(name):
+    # C language: starts with a letter, followed by letters or digits, no underscores or reserved keywords
+    if re.match("^[a-zA-Z][a-zA-Z0-9]*$", name):
+        return True
+    return False
+
+# Function to handle the input
+def process_code(code, variables, errors, used_vars):
     try:
         if '=' in code:  # Assignment statement
             var, expr = code.split('=')
             var = var.strip()
-            if not var.isalpha() or len(var) == 0:
-                raise SyntaxError("Invalid variable name.")
-            
+            if not is_valid_variable_name(var):
+                raise SyntaxError(f"Invalid variable name: {var}")
+
             postfix_expr = infix_to_postfix(expr.strip())
             value = evaluate_postfix(postfix_expr, variables)
             variables[var] = value
-            return f"{var} = {value}"
+            used_vars.add(var)
+            return var, postfix_expr, value
         else:  # Just an expression
             postfix_expr = infix_to_postfix(code.strip())
             value = evaluate_postfix(postfix_expr, variables)
-            return str(value)
+            return None, postfix_expr, value
     except ZeroDivisionError:
-        return "Error: Division by zero"
+        errors.append("Division by zero")
+        return None, [], "Error: Division by zero"
     except KeyError as e:
-        return f"Error: Undefined variable {e}"
+        errors.append(f"Undefined variable {e}")
+        return None, [], f"Error: Undefined variable {e}"
     except Exception as e:
-        return f"Error: {str(e)}"
+        errors.append(str(e))
+        return None, [], f"Error: {str(e)}"
 
-# Function to handle the button click
 def on_process():
     input_text = input_area.get("1.0", "end-1c")
     output_area.delete("1.0", tk.END)
-    
+
     variables = {}
+    errors = []
+    used_vars = set()
+
     lines = input_text.splitlines()
+
+    output_area.insert(tk.END, "Input lines:\n" + input_text + "\n\nOutput:\n")
+
+    for i, line in enumerate(lines, start=1):
+        line = line.strip()
+        if line:
+            var, postfix_expr, result = process_code(line, variables, errors, used_vars)
+            output_area.insert(tk.END, f"Line {i}: {line}\n")
+            output_area.insert(tk.END, f"Postfix: {' '.join(postfix_expr)}\n")
+            output_area.insert(tk.END, f"Result: {result}\n\n")
+
+    output_area.insert(tk.END, "-------------------------------------------\n")
+    output_area.insert(tk.END, "Variables used:\n")
+    if used_vars:
+        for var in used_vars:
+            output_area.insert(tk.END, f"{var}\n")
+    else:
+        output_area.insert(tk.END, "No variables were used\n")
     
-    for line in lines:
-        result = process_code(line.strip(), variables)
-        output_area.insert(tk.END, result + '\n')
+    output_area.insert(tk.END, "-------------------------------------------\n")
+    output_area.insert(tk.END, "Errors found:\n")
+    if errors:
+        for error in errors:
+            output_area.insert(tk.END, f"{error}\n")
+    else:
+        output_area.insert(tk.END, "No errors detected\n")
+
+# Function to load a .in file and insert its contents into the input area
+def load_file():
+    file_path = filedialog.askopenfilename(filetypes=[("Input files", "*.in")])
+    if file_path:
+        with open(file_path, "r") as file:
+            content = file.read()
+            input_area.delete("1.0", tk.END)
+            input_area.insert(tk.END, content)
 
 # Create the main window
 root = tk.Tk()
@@ -108,6 +155,10 @@ input_label.pack()
 input_area = tk.Text(root, height=10, width=50)
 input_area.pack()
 
+# Load file button
+load_button = tk.Button(root, text="Load .in File", command=load_file)
+load_button.pack()
+
 # Process button
 process_button = tk.Button(root, text="Process", command=on_process)
 process_button.pack()
@@ -115,7 +166,7 @@ process_button.pack()
 # Output area
 output_label = tk.Label(root, text="Output:")
 output_label.pack()
-output_area = tk.Text(root, height=10, width=50)
+output_area = tk.Text(root, height=15, width=50)
 output_area.pack()
 
 # Run the GUI loop
