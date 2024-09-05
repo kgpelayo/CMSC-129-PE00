@@ -1,0 +1,22 @@
+x = 5 + 3
+y = x * 2
+z = y - 4
+result = z / 2
+result
+a = 10
+b = 0
+c = a / b
+d = 5 + 3
+c
+x1 = 10
+y1 = x1 + 5
+z1 = y1 * 2
+a1 = z1 / 0  # This should trigger a division by zero error
+b1 = x1 % 3
+1x = 20  # Invalid variable name (starts with a digit)
+y2 = 5 + a1  # Undefined variable error if the previous line's assignment failed
+c$ = 30  # Invalid variable name (contains a special character)
+d1 = b1 * 3
+e1 = d1 / (z1 - z1)  # Another division by zero case
+f1 = e1 + 5  # Undefined variable error if the previous line's assignment failed
+g1 = undeclaredVar + 10  # Undefined variable error (undeclaredVar is not defined)
