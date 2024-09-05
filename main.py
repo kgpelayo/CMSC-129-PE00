@@ -258,7 +258,7 @@ def on_process():
     output_area.insert(tk.END, "Variables used:\n")
     if used_vars:
         for var in used_vars:
-            output_area.insert(tk.END, f"{var}\n")  # Remove variable values
+            output_area.insert(tk.END, f"{var}: {variables[var]}\n")  # Include variable values
     else:
         output_area.insert(tk.END, "No variables were used\n")
     
