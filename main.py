@@ -33,6 +33,8 @@ def evaluate_postfix(exp, variables):
         elif token in variables:
             stack.append(variables[token])
         else:
+            if len(stack) < 2:
+                raise ValueError("Invalid input")  # Handles invalid input like "_"
             b = stack.pop()
             a = stack.pop()
             stack.append(apply_op(a, b, token))
@@ -91,7 +93,7 @@ def infix_to_postfix(expression):
     return output
 
 def is_valid_variable_name(name):
-    """Check if a given name is a valid variable name."""
+    """Check if a given name is a valid C-style variable name."""
     return bool(re.match("^[a-zA-Z][a-zA-Z0-9]*$", name))
 
 def process_code(line_num, code, variables, errors, used_vars):
@@ -123,6 +125,9 @@ def process_code(line_num, code, variables, errors, used_vars):
             return var, postfix_expr, value
         else:
             tokens = tokenize(code)
+            if not tokens:
+                raise ValueError("Invalid input")  # Empty or invalid expression like "_"
+
             for token in tokens:
                 if token.isalnum() and not token.isdigit() and token not in variables:
                     errors.append(f"Line {line_num}: Undefined variable {token}")
@@ -134,6 +139,9 @@ def process_code(line_num, code, variables, errors, used_vars):
     except SyntaxError as e:
         errors.append(f"Line {line_num}: {str(e)}")
         return None, [], f"Error: {str(e)}"
+    except ValueError as e:
+        errors.append(f"Line {line_num}: {str(e)}")
+        return None, [], f"Error: Invalid input"
     except Exception as e:
         errors.append(f"Line {line_num}: {str(e)}")
         return None, [], f"Error: {str(e)}"

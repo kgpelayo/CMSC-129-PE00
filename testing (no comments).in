@@ -1,3 +1,8 @@
+_
+myNumber1=1
+myNumber2_isSoTwue=2
+bwiset=myNumber1 + myNumber2_isSoTwue
+helo_po=100
 x=5+3
 y=x*2
 z=y-4
@@ -20,3 +25,7 @@ d1 = b1 * 3
 e1 = d1 / (z1 - z1)
 f1 = e1 + 5
 g1 = undeclaredVar + 10
+
+
+
+
